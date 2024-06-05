@@ -15,9 +15,11 @@ app.use(express.json());
 //app.use('/', router);
 app.use('/user', userRoutes);
 app.use('/expense', expenseRoutes);
+User.hasMany(Expense);
+Expense.belongsTo(User);
 
 sequelize.sync().then(() => {
-    app.listen(3000, () => {
-        console.log('Server is running on port 3000');
+    app.listen(3003, () => {
+        console.log('Server is running on port 3003');
     });
 }).catch(err => console.log(err));
