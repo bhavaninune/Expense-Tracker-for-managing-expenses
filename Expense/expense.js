@@ -4,11 +4,12 @@ async function addNewExpense(e) {
         const expenseDetails = {
             expenseamount: e.target.expenseamount.value,
             description: e.target.description.value,
-            category: e.target.category.value
+            category: e.target.category.value,
+            
         };
         console.log(expenseDetails);
-        
-        const response = await axios.post('http://localhost:3000/expense/addexpense', expenseDetails);
+        const token = localStorage.getItem('token');
+        const response = await axios.post('http://localhost:3003/expense/addexpense', expenseDetails,{ headers: { "Authorization": token } });
         
         addNewExpensetoUI(response.data.expense);
     } catch (err){showError(err)
@@ -17,17 +18,23 @@ async function addNewExpense(e) {
 
     
 
-window.addEventListener('DOMContentLoaded', async () => {
-    console.log('DOM content loaded');
-    try {
-        const response = await axios.get('http://localhost:3000/expense/getexpenses');
+window.addEventListener('DOMContentLoaded', () => {
+    const token = localStorage.getItem('token');
+    
+    axios.get('http://localhost:3003/expense/getexpenses', {
+        headers: { "Authorization": token }
+    })
+    .then(response => {
         response.data.expenses.forEach(expense => {
             addNewExpensetoUI(expense);
         });
-    } catch (err) {
+    })
+    .catch(err => {
+        console.log(err);
         showError(err);
-    }
+    });
 });
+
 
 
 
@@ -46,8 +53,9 @@ function addNewExpensetoUI(expense) {
 }
 
 function deleteExpense(e, expenseid) {
-    axios.delete(`http://localhost:3000/expense/deleteexpense/${expenseid}`)
-        .then(() => {
+    const token = localStorage.getItem('token');
+    axios.delete(`http://localhost:3003/expense/deleteexpense/${expenseid}`,{ headers: { "Authorization": token } })
+    .then(() => {
             removeExpenseFromUI(expenseid);
         })
         .catch(err => {
