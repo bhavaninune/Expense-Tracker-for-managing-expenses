@@ -72,3 +72,49 @@ function removeExpenseFromUI(expenseid) {
         expenseElem.remove();
     }
 }
+document.getElementById('rzp-button1').onclick = async function (e) {
+    e.preventDefault(); // Prevent the default action
+
+    const token = localStorage.getItem('token');
+    try {
+        const response = await axios.get("http://localhost:3003/purchase/premiummembership", {
+            headers: {"Authorization": token}
+        });
+        console.log(response);
+
+        var options = {
+            "key": response.data.key_id, // Enter the Key ID generated from the Dashboard
+            "order_id": response.data.order.id, // For one time payment
+            "handler": async function (response) {
+                try {
+                    const res = await axios.post("http://localhost:3003/purchase/updatetransactionstatus", {
+                        order_id: options.order_id,
+                        payment_id: response.razorpay_payment_id
+                    }, {
+                        headers: {"Authorization": token}
+                    });
+
+                    alert('You are a premium user now');
+                } catch (error) {
+                    console.error(error);
+                    alert('Something went wrong while updating the transaction status');
+                }
+            },
+            "theme": {
+                "color": "#3399cc"
+            }
+        };
+
+        const rzp1 = new Razorpay(options);
+        rzp1.open();
+
+        rzp1.on('payment.failed', function (response) {
+            console.log(response);
+            alert('Payment failed. Please try again.');
+        });
+
+    } catch (error) {
+        console.error(error);
+        alert('Something went wrong while creating the order');
+    }
+};
