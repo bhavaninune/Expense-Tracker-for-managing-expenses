@@ -4,41 +4,34 @@ const Expense = require('../models/expense');
 const sequelize = require('../util/database');
 
 const getUserLeaderBoard = async (req, res) => {
-    try{
-        const users=await User.findAll({
-            attributes:['id','name']
+    try {
+        const users = await User.findAll({
+            attributes: ['id', 'name']
         });
-        const expenses=await Expense.findAll({
-            attributes:['userId',[sequelize.fn('sum',sequelize.col('expense.expenseamount')),'total_cost']],
-            group:['userID']
+        const expenses = await Expense.findAll({
+            attributes: ['userId', [sequelize.fn('sum', sequelize.col('expenseamount')), 'total_cost']],
+            group: ['userId']
         });
 
-        const userAggregatedExpenses = {}
-        console.log(expenses)
-       // expenses.forEach((expense)=>{
-           // if(userAggregatedExpenses[expense.userId])
-             //   {
-               //     userAggregatedExpenses[expense.userId] = userAggregatedExpenses[expense.userId] + expense.expenseamount;
-               // }
-               // else{
-                //    userAggregatedExpenses[expense.userId] = expense.expenseamount;
-                //}
-       // })
-        var userLeaderBoardDetails=[]
-users.forEach((user)=>{
-    userLeaderBoardDetails.push({name:user.name,total_cost:userAggregatedExpenses[user.id] || 0})
-})
+        const userAggregatedExpenses = {};
+        expenses.forEach(expense => {
+            userAggregatedExpenses[expense.userId] = expense.dataValues.total_cost;
+        });
 
+        const userLeaderBoardDetails = users.map(user => ({
+            name: user.name,
+            total_cost: userAggregatedExpenses[user.id] || 0
+        }));
 
-       console.log(userLeaderBoardDetails);
-       userLeaderBoardDetails.sort((a,b)=>b.total_cost-a.total_cost)
-        res.status(200).json(expenses)
-    } catch(err){
+        userLeaderBoardDetails.sort((a, b) => b.total_cost - a.total_cost);
+
+        res.status(200).json(userLeaderBoardDetails);
+    } catch (err) {
         console.log(err);
-        res.status(500).json(err)
+        res.status(500).json(err);
     }
-}
+};
 
 module.exports = {
     getUserLeaderBoard
-}
+};
