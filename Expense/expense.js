@@ -109,7 +109,7 @@ function showLeaderboard() {
         var leaderboardElem = document.getElementById('leaderboard');
         leaderboardElem.innerHTML += '<h1>Leader Board</h1>'
         userLeaderBoardArray.data.forEach((userDetails) => {
-            leaderboardElem.innerHTML += `<li>Name - ${userDetails.name} Total Expense - ${userDetails.totalExpenses || 0}</li>`
+            leaderboardElem.innerHTML += `<li>Name - ${userDetails.name} Total Expense - ${userDetails.total_cost}</li>`;
         })
     }
     document.getElementById('message').appendChild(inputElement);
@@ -140,7 +140,7 @@ document.getElementById('rzp-button1').onclick = async function (e) {
                     alert('You are a premium user now');
                     document.getElementById('rzp-button1').style.visibility = "hidden";
                     document.getElementById('message').innerHTML = "You are a premium user";
-
+                    showLeaderboard();
                 } catch (error) {
                     console.error(error);
                     alert('Something went wrong while updating the transaction status');
