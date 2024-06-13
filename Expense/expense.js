@@ -114,6 +114,21 @@ function showLeaderboard() {
     }
     document.getElementById('message').appendChild(inputElement);
 }
+async function download() {
+    try{
+        const response = await axios.get("http://localhost:3003/expense/download", {headers: {"Authorization": token}})
+        if(response.status === 200) {
+            var a = document.createElement("a");
+            a.href = response.data.fileURL;
+            a.download = 'MyExpense.csv';
+            a.click();
+        } else {
+            throw new Error(response.data.message);
+        }
+    } catch(err) {
+        showError(err);
+    }
+}
 
 document.getElementById('rzp-button1').onclick = async function (e) {
     e.preventDefault(); // Prevent the default action
