@@ -10,8 +10,7 @@ async function loginUser(event) {
         const response = await axios.post("http://localhost:3003/user/login", obj)
             if(response.status === 200) {
                 alert(response.data.message)
-                console.log(response.data)
-                localStorage.setItem('token',response.data.token)
+                localStorage.setItem('token', response.data.token)
                 window.location.href = "../Expense/expense.html"
             }
         }
@@ -19,4 +18,8 @@ async function loginUser(event) {
         console.log(JSON.stringify(err))
         document.body.innerHTML += `<div style="color:red;">${err.message} <div>`;
     }
+}
+
+function forgotpassword() {
+    window.location.href = "../ForgotPassword/forgotpassword.html"
 }
