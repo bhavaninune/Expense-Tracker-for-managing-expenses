@@ -1,23 +1,32 @@
 const express = require('express');
 const Expense = require('../models/expense');
-const { Where } = require('sequelize/lib/utils');
+const sequelize = require('../util/database');
 const User = require('../models/user');
 const router = express.Router();
 const addExpense = async (req, res) => {
+  const t = await sequelize.transaction();
+  try {
     const { expenseamount, description, category } = req.body;
 
-    // if (expenseamount == undefined || expenseamount.length === 0) {
-    //     return res.status(400).json({ success: false, message: 'parameters missing' });
-    // }
-
-    try {
-        const expense = await Expense.create({ expenseamount, description, category, userId: req.user.id });
-        return res.status(201).json({ expense, success: true });
-    } catch (err) {
-        console.log("error creating expense:",err)
-        return res.status(500).json({ success: false, error: err });
+    if (expenseamount == undefined || expenseamount.length === 0) {
+      return res.status(400).json({ success: false, message: 'parameters missing' });
     }
-};
+
+    const expense = await Expense.create({ expenseamount, description, category, userId: req.user.id }, { transaction: t });
+    const totalExpense = Number(req.user.totalExpenses) + Number(expenseamount);
+    
+    // Await the update operation
+    await User.update({ totalExpenses: totalExpense }, { where: { id: req.user.id }, transaction: t });
+    
+    await t.commit();
+    res.status(201).json({ expense });
+  } catch (err) {
+    await t.rollback();
+    res.status(500).json({ success: false, error: err });
+  }
+}
+
+
 
 const getExpenses = async (req, res) => {
     try {
@@ -28,24 +37,35 @@ const getExpenses = async (req, res) => {
     }
 };
 
-const deleteExpense = (req, res) => {
-    const expenseid = req.params.expenseid;
-    if(expenseid == undefined || expenseid.length === 0) {
-      return res.status(400).json({success:false,})
-    }
-    Expense.destroy({ where: { id:expenseid ,userId:req.user.id} })
-        .then((noofrows) => {
-          if(noofrows===0)
-            {
-              return res.status(404).json({success:false,message:'expense doesnt belong to user'})
-            }
-           
-          return res.status(200).json({success:true, message: "Expense deleted successfully" });
-        })
-        .catch((err) => {
-          return res.status(500).json({success:true,message:"failed"});
-        });
+const deleteExpense = async (req, res) => {
+  const t = await sequelize.transaction();
+  try{
+      const expenseId = req.params.expenseid;
+      if(isstringinvalid(expenseId)) {
+          return res.status(400).json({success: false});
+      }
+      const expensetobedeleted = await Expense.findAll({
+          where: { id: expenseId, userId: req.user.id }, transaction: t
+      });
+
+      const totalExpense = Number(req.user.totalExpenses) - Number(expensetobedeleted[0].expenseAmount);
+      req.user.totalExpenses = totalExpense;
+      await req.user.save({transaction: t});
+
+      const noOfRows = await Expense.destroy({ where: {id: expenseId, userId: req.user.id}, transaction: t });
+      if(noOfRows === 0) {
+          await t.rollback();
+          return res.status(404).json({success: false, message: 'Expense does not belongs to user'})
+      }
+      await t.commit();
+      return res.status(200).json({ success: true, message: 'Deleted successfully'})
+  } catch(err) {
+      await t.rollback();
+      console.log(err)
+      return res.status(500).json({ success: true, message: 'Failed' });
+  }
 }
+
 module.exports = {
     addExpense,
     getExpenses,
